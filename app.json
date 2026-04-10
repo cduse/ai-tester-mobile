@@ -1,27 +1,41 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "AI Tester",
+    "slug": "ai-tester-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1a1a1a"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "AI Tester needs the microphone to record voice notes about your test contexts.",
+        "NSSpeechRecognitionUsageDescription": "AI Tester uses speech recognition to transcribe your test instructions."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1a1a1a"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": "AI Tester needs the microphone to record voice notes about your test contexts."
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     }
