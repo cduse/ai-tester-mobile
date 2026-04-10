@@ -36,7 +36,8 @@
         {
           "microphonePermission": "AI Tester needs the microphone to record voice notes about your test contexts."
         }
-      ]
+      ],
+      "./plugins/withAndroidSigning"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
