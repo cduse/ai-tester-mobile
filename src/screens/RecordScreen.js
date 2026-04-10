@@ -4,7 +4,7 @@ import {
   StyleSheet, Alert, Animated, Easing, ActivityIndicator,
 } from 'react-native';
 import { Audio } from 'expo-av';
-import { getSettings, upsertContext, getContexts } from '../services/storage';
+import { getSettings, upsertContext, getContexts, getProducts, getScenarios } from '../services/storage';
 import { transcribeAudio, extractContext, refineContext } from '../services/openai';
 import { getTheme } from '../utils/theme';
 import { Feather } from '@expo/vector-icons';
@@ -21,10 +21,13 @@ const PHASE = {
 };
 
 export default function RecordScreen({ navigation, route }) {
-  const existingContextId = route.params?.contextId || null;
+  const existingContextId = route.params?.contextId   || null;
+  const targetProductId   = route.params?.productId   || null;
+  const targetScenarioId  = route.params?.scenarioId  || null;
 
   const [dark]      = useState(true);
   const theme       = getTheme(dark);
+  const [groupLabel, setGroupLabel] = useState('');
 
   const [phase,       setPhase]       = useState(PHASE.IDLE);
   const [transcript,  setTranscript]  = useState('');
@@ -37,8 +40,19 @@ export default function RecordScreen({ navigation, route }) {
   const pulseAnim     = useRef(new Animated.Value(1)).current;
   const pulseLoop     = useRef(null);
 
-  // Cleanup on unmount
+  // Cleanup on unmount + load group label
   useEffect(() => {
+    if (targetProductId) {
+      getProducts().then(list => {
+        const p = list.find(x => x.id === targetProductId);
+        if (p) setGroupLabel(`Product: ${p.name}`);
+      });
+    } else if (targetScenarioId) {
+      getScenarios().then(list => {
+        const s = list.find(x => x.id === targetScenarioId);
+        if (s) setGroupLabel(`Scenario: ${s.name}`);
+      });
+    }
     return () => {
       stopTimer();
       if (recordingRef.current) recordingRef.current.stopAndUnloadAsync().catch(() => {});
@@ -171,7 +185,10 @@ export default function RecordScreen({ navigation, route }) {
     if (!extracted) return;
     setPhase(PHASE.SAVING);
     try {
-      const saved = await upsertContext(extracted);
+      const payload = { ...extracted };
+      if (targetProductId)  payload.productId  = targetProductId;
+      if (targetScenarioId) payload.scenarioId = targetScenarioId;
+      const saved = await upsertContext(payload);
       navigation.replace('ContextDetail', { contextId: saved?.id || extracted.id });
     } catch (err) {
       Alert.alert('Save failed', err.message);
@@ -250,6 +267,12 @@ export default function RecordScreen({ navigation, route }) {
         <Text style={[styles.reviewSub, { color: theme.muted }]}>
           AI extracted the following from your voice note. Review before saving.
         </Text>
+        {groupLabel ? (
+          <View style={[styles.groupBadge, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '40' }]}>
+            <Feather name={targetProductId ? 'box' : 'git-branch'} size={12} color={theme.primary} />
+            <Text style={[styles.groupBadgeText, { color: theme.primary }]}>Saving to: {groupLabel}</Text>
+          </View>
+        ) : null}
 
         {name && (
           <SectionCard title="Context Name" theme={theme}>
@@ -389,7 +412,15 @@ const styles = StyleSheet.create({
 
   reviewScroll: { paddingBottom: 20 },
   reviewTitle:  { fontSize: 18, fontWeight: '700', marginBottom: 6 },
-  reviewSub:    { fontSize: 13, lineHeight: 19, marginBottom: 18 },
+  reviewSub:    { fontSize: 13, lineHeight: 19, marginBottom: 12 },
+
+  groupBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderWidth: 1, borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 6, marginBottom: 16,
+    alignSelf: 'flex-start',
+  },
+  groupBadgeText: { fontSize: 12, fontWeight: '700' },
 
   fieldValue: { fontSize: 14, lineHeight: 21 },
 

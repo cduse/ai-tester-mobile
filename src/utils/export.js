@@ -7,12 +7,13 @@ const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 
 /**
  * Convert one or more mobile contexts to the extension's storage format.
- * The extension stores contexts with productId — we use a sentinel for mobile imports.
+ * Preserves productId from mobile if provided; otherwise uses the sentinel.
  */
-export function buildExportPayload(contexts, productId = '__mobile__') {
+export function buildExportPayload(contexts, defaultProductId = '__mobile__') {
   return contexts.map(ctx => ({
     id: ctx.id || genId(),
-    productId,
+    productId: ctx.productId || defaultProductId,
+    scenarioId: ctx.scenarioId || undefined,
     name: ctx.name || 'Unnamed Context',
     description: ctx.description || '',
     strategy: ctx.strategy || '',
